@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Imperio Financiero - 20 Niveles</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0c2313;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .header-panel {
+            position: absolute;
+            top: 15px;
+            width: 90%;
+            max-width: 420px;
+            display: flex;
+            justify-content: space-between;
+            background: rgba(12, 35, 19, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 10px 16px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            z-index: 10;
+        }
+
+        .stat-box { text-align: center; }
+
+        .stat-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #81c784;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        /* TABLERO DE JUEGO CON LAS IMÁGENES TEMÁTICAS QUE CAMBIAN EN CADA NIVEL */
+        #game-board {
+            position: relative;
+            width: 90vw;
+            height: 65vh;
+            max-width: 420px;
+            max-height: 560px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 20px;
+            border: 2px dashed rgba(255, 215, 0, 0.6);
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+            transition: background-image 0.4s ease-in-out;
+        }
+
+        /* MONEDA EXACTA CON DEGRADADO RADIAL, SOMBRAS Y EFECTO DE PULSO/ROTACIÓN */
+        .coin {
+            position: absolute;
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            cursor: pointer;
+            transform: scale(0);
+            transition: transform 0.05s ease-out;
+            background: radial-gradient(circle at 35% 35%, #fffde7 0%, #ffdf00 40%, #e65100 75%, #5d4037 100%);
+            box-shadow: 
+                0 0 22px rgba(255, 215, 0, 1),
+                inset 0 0 0 4px #fff9c4,
+                inset 0 0 0 8px #ff8f00,
+                0 10px 18px rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffe082;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .coin::after {
+            content: '$';
+            font-family: 'Georgia', serif;
+            font-size: 45px;
+            font-weight: 900;
+            color: #3e2723;
+            text-shadow: 1px 1px 0px #fffde7, -1px -1px 0px #bf360c;
+        }
+
+        .coin.active {
+            transform: scale(1);
+            animation: spinPulse 0.25s infinite alternate;
+        }
+
+        @keyframes spinPulse {
+            0% { transform: scale(1) rotate(-8deg); }
+            100% { transform: scale(1.15) rotate(8deg); }
+        }
+
+        .spark {
+            position: absolute;
+            pointer-events: none;
+            font-size: 26px;
+            font-weight: bold;
+            color: #69f0ae;
+            animation: floatUp 0.35s forwards ease-out;
+            text-shadow: 0 0 12px #00e676;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-45px) scale(1.7); }
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 30, 15, 0.94);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            z-index: 20;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .overlay h1 {
+            font-size: 24px;
+            color: #ffd700;
+            margin-bottom: 8px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+        }
+
+        .overlay p {
+            font-size: 14px;
+            color: #e8f5e9;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, #ffd700, #ff8f00);
+            border: none;
+            padding: 14px 35px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #1b5e20;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 143, 0, 0.6);
+            transition: transform 0.1s;
+        }
+
+        .btn-start:active { transform: scale(0.95); }
+
+        .btn-share {
+            margin-top: 12px;
+            background: linear-gradient(45deg, #25d366, #128c7e);
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffffff;
+            border-radius: 25px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-panel">
+        <div class="stat-box">
+            <div class="stat-label">Nivel</div>
+            <div id="level-val" class="stat-value">1 / 20</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Puntos</div>
+            <div id="score" class="stat-value">0 / 10</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Tiempo</div>
+            <div id="timer" class="stat-value">30s</div>
+        </div>
+    </div>
+
+    <div id="game-board">
+        <div id="overlay" class="overlay">
+            <h1 id="overlay-title">💵 Moneda Fugaz ⚡</h1>
+            <p id="overlay-msg">Supérate a lo largo de 20 niveles.<br>¡Toca la moneda dorada antes de que escape!</p>
+            <button id="start-btn" class="btn-start" onclick="startGame()">¡JUGAR!</button>
+            <button id="share-btn" class="btn-share" onclick="shareScore()">📲 Retar en WhatsApp</button>
+        </div>
+
+        <div id="coin" class="coin" onclick="catchCoin()"></div>
+    </div>
+
+    <script>
+        const niveles = [
+            { id: 1, nombre: "Divisas USD", meta: 10, tiempo: 30, velocidad: 360, img: "https://images.unsplash.com/photo-1580519542036-c47de6196ba5?w=800&auto=format&fit=crop&q=80" },
+            { id: 2, nombre: "Wall Street", meta: 12, tiempo: 28, velocidad: 340, img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80" },
+            { id: 3, nombre: "Portafolio de Inversión", meta: 15, tiempo: 26, velocidad: 320, img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80" },
+            { id: 4, nombre: "Lingotes de Oro", meta: 18, tiempo: 25, velocidad: 300, img: "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=800&auto=format&fit=crop&q=80" },
+            { id: 5, nombre: "Bolsa de Valores (NYSE)", meta: 20, tiempo: 24, velocidad: 280, img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80" },
+            { id: 6, nombre: "Bienes Raíces Commercial", meta: 22, tiempo: 23, velocidad: 260, img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop&q=80" },
+            { id: 7, nombre: "Criptoactivos & Blockchain", meta: 25, tiempo: 22, velocidad: 240, img: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?w=800&auto=format&fit=crop&q=80" },
+            { id: 8, nombre: "Bonos del Tesoro", meta: 28, tiempo: 21, velocidad: 230, img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop&q=80" },
+            { id: 9, nombre: "Acciones Tecnológicas", meta: 30, tiempo: 20, velocidad: 220, img: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800&auto=format&fit=crop&q=80" },
+            { id: 10, nombre: "Capital de Riesgo (VC)", meta: 32, tiempo: 19, velocidad: 210, img: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=800&auto=format&fit=crop&q=80" },
+            { id: 11, nombre: "Activos Globales", meta: 35, tiempo: 18, velocidad: 200, img: "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80" },
+            { id: 12, nombre: "Diamantes & Joyas", meta: 38, tiempo: 17, velocidad: 190, img: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80" },
+            { id: 13, nombre: "Banca Privada", meta: 40, tiempo: 16, velocidad: 180, img: "https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=800&auto=format&fit=crop&q=80" },
+            { id: 14, nombre: "Petróleo & Commodities", meta: 42, tiempo: 15, velocidad: 170, img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80" },
+            { id: 15, nombre: "Fondos de Cobertura (Hedge)", meta: 45, tiempo: 14, velocidad: 160, img: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80" },
+            { id: 16, nombre: "Tarjetas Black Platinum", meta: 48, tiempo: 13, velocidad: 150, img: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80" },
+            { id: 17, nombre: "Jets Privados Ejecutivos", meta: 50, tiempo: 12, velocidad: 140, img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80" },
+            { id: 18, nombre: "Yates de Lujo", meta: 55, tiempo: 11, velocidad: 130, img: "https://images.unsplash.com/photo-1569263979104-865ab9cd8d5c?w=800&auto=format&fit=crop&q=80" },
+            { id: 19, nombre: "Torres Financieras", meta: 60, tiempo: 10, velocidad: 120, img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80" },
+            { id: 20, nombre: "Cima de la Dinastía Global", meta: 70, tiempo: 9, velocidad: 110, img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80" }
+        ];
+
+        let currentLevelIndex = 0;
+        let score = 0;
+        let timeLeft = 30;
+        let gameInterval = null;
+        let coinTimeout = null;
+
+        const board = document.getElementById('game-board');
+        const coin = document.getElementById('coin');
+        const scoreEl = document.getElementById('score');
+        const timerEl = document.getElementById('timer');
+        const levelValEl = document.getElementById('level-val');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const overlayMsg = document.getElementById('overlay-msg');
+        const startBtn = document.getElementById('start-btn');
+        const shareBtn = document.getElementById('share-btn');
+
+        function loadLevel() {
+            const level = niveles[currentLevelIndex];
+            score = 0;
+            timeLeft = level.tiempo;
+
+            levelValEl.textContent = `${level.id} / 20`;
+            scoreEl.textContent = `${score} / ${level.meta}`;
+            timerEl.textContent = timeLeft + 's';
+            board.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('${level.img}')`;
+
+            overlay.style.display = 'none';
+            shareBtn.style.display = 'none';
+
+            clearInterval(gameInterval);
+            clearTimeout(coinTimeout);
+
+            gameInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft + 's';
+
+                if (timeLeft <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+
+            moveCoin();
+        }
+
+        function startGame() {
+            currentLevelIndex = 0;
+            loadLevel();
+        }
+
+        function nextLevel() {
+            if (currentLevelIndex < niveles.length - 1) {
+                currentLevelIndex++;
+                loadLevel();
+            } else {
+                endGame(true);
+            }
+        }
+
+        function moveCoin() {
+            clearTimeout(coinTimeout);
+            coin.classList.remove('active');
+
+            const boardWidth = board.clientWidth - 95;
+            const boardHeight = board.clientHeight - 95;
+
+            const randomX = Math.max(10, Math.floor(Math.random() * boardWidth));
+            const randomY = Math.max(10, Math.floor(Math.random() * boardHeight));
+
+            coin.style.left = randomX + 'px';
+            coin.style.top = randomY + 'px';
+
+            setTimeout(() => {
+                coin.classList.add('active');
+            }, 20);
+
+            const level = niveles[currentLevelIndex];
+            coinTimeout = setTimeout(() => {
+                if (timeLeft > 0) moveCoin();
+            }, level.velocidad);
+        }
+
+        function catchCoin() {
+            if (timeLeft <= 0 || !coin.classList.contains('active')) return;
+
+            const level = niveles[currentLevelIndex];
+            score++;
+            scoreEl.textContent = `${score} / ${level.meta}`;
+
+            createSpark('+1');
+
+            if (score >= level.meta) {
+                clearInterval(gameInterval);
+                clearTimeout(coinTimeout);
+                coin.classList.remove('active');
+
+                if (currentLevelIndex < niveles.length - 1) {
+                    overlayTitle.textContent = `¡Nivel ${level.id} Completado!`;
+                    overlayMsg.innerHTML = `Conquistaste el mercado de <b>${level.nombre}</b>.<br>¿Listo para el Nivel ${level.id + 1}?`;
+                    startBtn.textContent = 'SIGUIENTE NIVEL';
+                    startBtn.onclick = nextLevel;
+                    shareBtn.style.display = 'inline-block';
+                    overlay.style.display = 'flex';
+                } else {
+                    endGame(true);
+                }
+            } else {
+                moveCoin();
+            }
+        }
+
+        function createSpark(text) {
+            const spark = document.createElement('div');
+            spark.className = 'spark';
+            spark.textContent = text;
+            spark.style.left = coin.style.left;
+            spark.style.top = coin.style.top;
+            board.appendChild(spark);
+
+            setTimeout(() => spark.remove(), 350);
+        }
+
+        function endGame(victory) {
+            clearInterval(gameInterval);
+            clearTimeout(coinTimeout);
+            coin.classList.remove('active');
+
+            if (victory) {
+                overlayTitle.textContent = '🏆 ¡IMPERIO COMPLETO!';
+                overlayMsg.innerHTML = `¡Felicidades! Has superado los 20 niveles y te has convertido en el dueño absoluto del imperio financiero.`;
+                startBtn.textContent = 'VOLVER A JUGAR';
+                startBtn.onclick = startGame;
+            } else {
+                const level = niveles[currentLevelIndex];
+                overlayTitle.textContent = '¡TIEMPO AGOTADO!';
+                overlayMsg.innerHTML = `Te quedaste en el Nivel ${level.id} (${level.nombre}) con <b>${score}</b> puntos.`;
+                startBtn.textContent = 'REINTENTAR NIVEL';
+                startBtn.onclick = loadLevel;
+            }
+
+            shareBtn.style.display = 'inline-block';
+            overlay.style.display = 'flex';
+        }
+
+        function shareScore() {
+            const level = niveles[currentLevelIndex];
+            const text = `🔥 ¡Estoy en el Nivel ${level.id} (${level.nombre}) en "Atrapa la Moneda Fugaz"! ¿Serás capaz de superarme? 💰\n\nDescarga la red social Livre en Play Store y disfruta de este juego: https://play.google.com/store/apps/details?id=livre.atst`;
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
